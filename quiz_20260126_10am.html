@@ -2,21 +2,22 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
+    <!-- 設定 Viewport 以適配 iPad 及禁止縮放 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>四社初中問答比賽</title>
     
-    <!-- 引入 React 18 (Production) -->
+    <!-- 引入 React 18 (Production 版本，適合發佈) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- 引入 Babel (用於解析 JSX) -->
+    <!-- 引入 Babel (用於瀏覽器端解析 JSX) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- 引入 Tailwind CSS -->
+    <!-- 引入 Tailwind CSS (樣式庫) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        /* 動畫定義 */
+        /* --- 動畫定義 --- */
         @keyframes fadeInDown {
           from { opacity: 0; transform: translateY(-20px); }
           to { opacity: 1; transform: translateY(0); }
@@ -25,39 +26,128 @@
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        @keyframes move-blob {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
         }
         
-        /* 應用動畫類別 */
+        /* 分數變化時的卡片彈跳與發光 (增強版) */
+        @keyframes score-bump {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.4); filter: brightness(1.2); box-shadow: 0 0 25px rgba(255,255,255,0.9); }
+            100% { transform: scale(1); }
+        }
+
+        /* 加減分數字的浮動淡出動畫 (增強版) */
+        @keyframes float-out-up {
+            0% { opacity: 0; transform: translateY(30px) scale(0.5); }
+            20% { opacity: 1; transform: translateY(0px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-80px) scale(1); }
+        }
+        
+        /* --- 應用動畫類別 --- */
         .animate-fade-in-down { animation: fadeInDown 0.8s ease-out; }
         .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-blob { animation: move-blob 10s infinite; }
+        .animate-score-bump { animation: score-bump 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .animate-score-float { animation: float-out-up 0.8s ease-out forwards; }
         
-        /* 隱藏滾動條但保持功能，提升全螢幕體驗 */
-        body { 
+        /* --- 針對 iPad 投影優化：隱藏滾動條，鎖定畫面 --- */
+        body, html {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* 禁止捲動 */
             -ms-overflow-style: none; 
             scrollbar-width: none; 
-            overflow-x: hidden;
-            touch-action: manipulation; /* 優化觸控反應 */
+            touch-action: manipulation;
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
         }
         body::-webkit-scrollbar { display: none; }
         
-        /* 自定義按鈕點擊效果 */
-        button:active { transform: scale(0.98); }
+        button:active { transform: scale(0.96); }
+
+        /* --- 明亮暖色背景 + 寶覺中學圖片 --- */
+        .custom-bg {
+            background-color: #FFF7ED; /* 預備底色 */
+            /* 寶覺中學校舍圖片 */
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Po_Kok_Secondary_School_2018.jpg/1200px-Po_Kok_Secondary_School_2018.jpg'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        /* 卡片樣式 - 明亮懸浮感 */
+        .bright-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 10px 40px -10px rgba(251, 146, 60, 0.25); /* 增強陰影 */
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+        }
+
+        .bright-card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px -10px rgba(251, 146, 60, 0.4);
+            border-color: #FDBA74; 
+        }
+        
+        /* 按鈕樣式 - 鮮豔漸層 */
+        .gradient-btn {
+            background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3);
+            transition: all 0.3s ease;
+        }
+        .gradient-btn:hover {
+            box-shadow: 0 8px 25px rgba(234, 88, 12, 0.5);
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        /* 文字陰影 */
+        .text-shadow-sm {
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        /* 文字描邊，讓浮動分數更清晰 */
+        .text-stroke {
+            -webkit-text-stroke: 2px white;
+            paint-order: stroke fill;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* 四社顏色變數 (Tailwind Utility) */
+        .house-red { @apply bg-red-500 text-white border-red-600; }
+        .house-yellow { @apply bg-yellow-400 text-white border-yellow-500; }
+        .house-blue { @apply bg-blue-500 text-white border-blue-600; }
+        .house-green { @apply bg-green-500 text-white border-green-600; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans selection:bg-indigo-200 selection:text-indigo-900">
-    <div id="root"></div>
+<body class="custom-bg text-gray-800 selection:bg-orange-200 selection:text-orange-900 relative">
+    
+    <!-- 全局遮罩：提高文字可讀性 (橙色系半透明遮罩) -->
+    <div class="absolute inset-0 bg-orange-50/80 z-0"></div>
+
+    <!-- 動態背景裝飾 -->
+    <div class="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-orange-300/30 rounded-full mix-blend-multiply filter blur-[80px] animate-blob z-0"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[45vw] h-[45vw] bg-yellow-300/30 rounded-full mix-blend-multiply filter blur-[80px] animate-blob animation-delay-4000 z-0"></div>
+
+    <div id="root" class="relative z-10 h-full w-full"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- 圖標組件 (使用 SVG 直接繪製，無需額外庫) ---
+        // --- 圖標組件 (SVG) ---
         const IconWrapper = ({ children, size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
         );
@@ -74,6 +164,28 @@
         const Tag = (props) => <IconWrapper {...props}><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></IconWrapper>;
         const Zap = (props) => <IconWrapper {...props}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></IconWrapper>;
         const Grid = (props) => <IconWrapper {...props}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></IconWrapper>;
+        const Plus = (props) => <IconWrapper {...props}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></IconWrapper>;
+        const Minus = (props) => <IconWrapper {...props}><line x1="5" y1="12" x2="19" y2="12" /></IconWrapper>;
+        
+        // --- 四社設定 ---
+        const HOUSES = [
+            { id: 'red', name: '明社', color: 'bg-red-500', text: 'text-red-600', border: 'border-red-500', bgLight: 'bg-red-50' },
+            { id: 'yellow', name: '慧社', color: 'bg-yellow-400', text: 'text-yellow-600', border: 'border-yellow-400', bgLight: 'bg-yellow-50' },
+            { id: 'blue', name: '達社', color: 'bg-blue-500', text: 'text-blue-600', border: 'border-blue-500', bgLight: 'bg-blue-50' },
+            { id: 'green', name: '聰社', color: 'bg-green-500', text: 'text-green-600', border: 'border-green-500', bgLight: 'bg-green-50' },
+        ];
+
+        // -----------------------------------------------------------------------------
+        // 工具函數：洗牌
+        // -----------------------------------------------------------------------------
+        const shuffleArray = (array) => {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        };
 
         // -----------------------------------------------------------------------------
         // 第一回合 題庫數據 (必答題)
@@ -207,29 +319,35 @@
         // 主程式組件
         // -----------------------------------------------------------------------------
         const App = () => {
-          const [viewMode, setViewMode] = useState('MAIN_MENU'); // 'MAIN_MENU', 'ROUND_1_MENU', 'ROUND_1_GAME', 'ROUND_2_GAME'
-          const [currentSet, setCurrentSet] = useState(null); // 'A', 'B', 'C', 'D' for Round 1
+          const [viewMode, setViewMode] = useState('MAIN_MENU'); 
+          const [currentSet, setCurrentSet] = useState(null); 
           const [questionIndex, setQuestionIndex] = useState(0);
           const [isRevealed, setIsRevealed] = useState(false);
           const [selectedOption, setSelectedOption] = useState(null);
           const [results, setResults] = useState({});
           const [showSummary, setShowSummary] = useState(false);
-          
-          // Current Active Question List
           const [activeQuestions, setActiveQuestions] = useState([]);
 
+          // 計分系統 State
+          const [scores, setScores] = useState({ red: 200, yellow: 200, blue: 200, green: 200 });
+          // 動畫 State: { red: { amount: 20, id: 123 }, ... }
+          const [scoreAnimations, setScoreAnimations] = useState({});
+          
+          const [round1BonusGiven, setRound1BonusGiven] = useState(false); // 防止Round 1重複加分
+
           useEffect(() => {
-            // Reset question state when questions change
             setQuestionIndex(0);
             setIsRevealed(false);
             setSelectedOption(null);
             setResults({});
             setShowSummary(false);
+            setRound1BonusGiven(false);
+            // 重置動畫狀態
+            setScoreAnimations({});
           }, [activeQuestions]);
 
           const handleMainMenu = () => setViewMode('MAIN_MENU');
 
-          // --- Round 1 Logic ---
           const goToRound1Menu = () => {
               setViewMode('ROUND_1_MENU');
               setCurrentSet(null);
@@ -241,14 +359,11 @@
               setViewMode('ROUND_1_GAME');
           };
 
-          // --- Round 2 Logic ---
           const startRound2 = () => {
-              // 這裡不再進行隨機洗牌，直接使用已經靜態洗牌過的 ROUND_2_DATA
               setActiveQuestions(ROUND_2_DATA);
               setViewMode('ROUND_2_GAME');
           };
 
-          // --- Shared Quiz Logic ---
           const handleNext = () => {
             if (questionIndex < activeQuestions.length - 1) {
                 setQuestionIndex(prev => prev + 1);
@@ -283,12 +398,75 @@
             setResults(prev => ({ ...prev, [questionIndex]: isCorrect ? 'correct' : 'incorrect' }));
           };
 
+          // --- 計分功能函數 ---
+          
+          // Round 1: 結算頁面加分
+          const awardRound1Points = (houseId) => {
+              if (round1BonusGiven) return;
+              const correctCount = Object.values(results).filter(r => r === 'correct').length;
+              const pointsToAdd = correctCount * 10;
+              
+              if (pointsToAdd > 0) {
+                setScores(prev => ({
+                    ...prev,
+                    [houseId]: prev[houseId] + pointsToAdd
+                }));
+                
+                // 觸發動畫
+                setScoreAnimations(prev => ({
+                    ...prev,
+                    [houseId]: { amount: pointsToAdd, id: Date.now() }
+                }));
+                
+                // Cleanup animation state after 1 second
+                setTimeout(() => {
+                    setScoreAnimations(prev => {
+                        const newState = { ...prev };
+                        delete newState[houseId];
+                        return newState;
+                    });
+                }, 1000);
+
+                setRound1BonusGiven(true);
+              } else {
+                 alert("本回合沒有得分可加。");
+                 setRound1BonusGiven(true);
+              }
+          };
+
+          // Round 2: 搶答題加減分
+          const adjustScore = (houseId, amount) => {
+              setScores(prev => ({
+                  ...prev,
+                  [houseId]: prev[houseId] + amount
+              }));
+
+              const animId = Date.now();
+              // 觸發動畫
+              setScoreAnimations(prev => ({
+                  ...prev,
+                  [houseId]: { amount: amount, id: animId }
+              }));
+
+              // Cleanup animation state after 1 second
+              setTimeout(() => {
+                  setScoreAnimations(prev => {
+                      // Only remove if it's the same animation ID (in case of rapid clicks)
+                      if (prev[houseId]?.id === animId) {
+                          const newState = { ...prev };
+                          delete newState[houseId];
+                          return newState;
+                      }
+                      return prev;
+                  });
+              }, 1000);
+          };
+
           const currentQData = activeQuestions[questionIndex];
           const totalQuestions = activeQuestions.length;
           const isLastQuestion = questionIndex === totalQuestions - 1;
           const currentResult = results[questionIndex];
 
-          // Determine Category Color
           let categoryColorClass = "bg-gray-100 text-gray-700 border-gray-200";
           if (currentQData) {
             if (currentQData.category.includes('寶覺')) categoryColorClass = "bg-orange-100 text-orange-800 border-orange-200";
@@ -300,80 +478,104 @@
             else if (currentQData.category.includes('科')) categoryColorClass = "bg-purple-100 text-purple-800 border-purple-200";
           }
 
-          // --- 1. MAIN MENU SCREEN ---
+          // --- 記分板組件 (包含動畫邏輯) ---
+          const ScoreBoard = () => (
+              <div className="fixed top-4 right-4 z-50 flex gap-2">
+                  {HOUSES.map(house => {
+                      const anim = scoreAnimations[house.id];
+                      // 檢查動畫是否是最近觸發的 (例如 1秒內) 用於添加 CSS class
+                      // 這裡使用 key 來強制重繪觸發動畫
+                      return (
+                          <div key={house.id} className="relative">
+                              <div className={`${house.color} text-white px-3 py-1.5 rounded-lg shadow-md flex flex-col items-center min-w-[70px] transition-transform duration-200 ${anim && (Date.now() - anim.id < 500) ? 'animate-score-bump' : ''}`}>
+                                  <span className="text-xs font-bold opacity-90">{house.name}</span>
+                                  <span className="text-xl font-black">{scores[house.id]}</span>
+                              </div>
+                              {/* 浮動數字動畫 */}
+                              {anim && (
+                                  <div key={anim.id} className={`absolute top-full left-0 right-0 text-center font-black text-3xl animate-score-float pointer-events-none text-stroke z-50 ${anim.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                      {anim.amount > 0 ? `+${anim.amount}` : anim.amount}
+                                  </div>
+                              )}
+                          </div>
+                      );
+                  })}
+              </div>
+          );
+
+          // -------------------------------------------------------------------------
+          // RENDER
+          // -------------------------------------------------------------------------
+
           if (viewMode === 'MAIN_MENU') {
             return (
-              <div className="min-h-screen bg-gradient-to-br from-slate-900 to-indigo-900 flex flex-col items-center justify-center p-8 text-white font-sans">
-                <header className="mb-20 text-center animate-fade-in-down">
-                   <div className="flex justify-center mb-6">
-                      <div className="p-4 bg-yellow-400 rounded-full shadow-lg shadow-yellow-500/50">
-                        <Trophy size={64} className="text-yellow-900" />
+              <div className="h-full w-full flex flex-col items-center justify-center p-8 text-gray-800 font-sans relative z-10">
+                <ScoreBoard />
+                <header className="mb-10 text-center animate-fade-in-down">
+                   <div className="flex justify-center mb-4">
+                      <div className="p-3 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full shadow-lg animate-float">
+                        <Trophy size={48} className="text-white drop-shadow-md" />
                       </div>
                    </div>
-                  <h1 className="text-7xl font-black mb-6 tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-200 drop-shadow-sm">
+                  <h1 className="text-5xl font-black mb-4 tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-yellow-500 drop-shadow-sm filter">
                     四社初中問答比賽
                   </h1>
-                  <p className="text-2xl text-indigo-200 font-light tracking-widest uppercase">Inter-House Quiz Competition</p>
+                  <p className="text-xl text-gray-500 font-light tracking-[0.2em] uppercase">Inter-House Quiz Competition</p>
                 </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-16 w-full max-w-6xl px-4">
-                  {/* Round 1 Card */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-5xl px-4">
                   <button 
                     onClick={goToRound1Menu}
-                    className="group relative h-96 bg-white/5 backdrop-blur-sm rounded-[2.5rem] border border-white/10 hover:bg-indigo-600/20 hover:border-indigo-400/50 hover:-translate-y-2 transition-all duration-500 shadow-2xl overflow-hidden flex flex-col items-center justify-center"
+                    className="group relative h-80 bright-card bright-card-hover transition-all duration-500 overflow-hidden flex flex-col items-center justify-center"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <div className="relative z-10 flex flex-col items-center">
-                        <span className="text-9xl font-black text-white/10 group-hover:text-white/20 transition-colors mb-4">1</span>
-                        <h2 className="text-5xl font-bold mb-4 group-hover:text-yellow-300 transition-colors">第一回合</h2>
-                        <div className="px-6 py-2 bg-indigo-500/30 rounded-full border border-indigo-400/30">
-                            <span className="text-2xl font-light tracking-widest text-indigo-100">必答題</span>
+                        <span className="text-8xl font-black text-gray-100 group-hover:text-orange-100 transition-colors mb-2">1</span>
+                        <h2 className="text-4xl font-bold mb-3 text-gray-700 group-hover:text-orange-500 transition-colors text-shadow-sm">第一回合</h2>
+                        <div className="px-6 py-2 bg-orange-100 rounded-full border border-orange-200">
+                            <span className="text-xl font-light tracking-widest text-orange-600">必答題</span>
                         </div>
                     </div>
                   </button>
 
-                  {/* Round 2 Card */}
                   <button 
                     onClick={startRound2}
-                    className="group relative h-96 bg-white/5 backdrop-blur-sm rounded-[2.5rem] border border-white/10 hover:bg-red-600/20 hover:border-red-400/50 hover:-translate-y-2 transition-all duration-500 shadow-2xl overflow-hidden flex flex-col items-center justify-center"
+                    className="group relative h-80 bright-card bright-card-hover transition-all duration-500 overflow-hidden flex flex-col items-center justify-center"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <div className="relative z-10 flex flex-col items-center">
-                        <div className="absolute top-10 right-10 animate-pulse">
-                           <Zap size={48} className="text-yellow-400 opacity-50 group-hover:opacity-100" />
+                        <div className="absolute top-10 right-10 animate-bounce" style={{animationDuration: '2s'}}>
+                           <Zap size={36} className="text-yellow-400 opacity-70 group-hover:opacity-100" />
                         </div>
-                        <span className="text-9xl font-black text-white/10 group-hover:text-white/20 transition-colors mb-4">2</span>
-                        <h2 className="text-5xl font-bold mb-4 group-hover:text-yellow-300 transition-colors">第二回合</h2>
-                        <div className="px-6 py-2 bg-red-500/30 rounded-full border border-red-400/30">
-                            <span className="text-2xl font-light tracking-widest text-red-100">搶答題</span>
+                        <span className="text-8xl font-black text-gray-100 group-hover:text-orange-100 transition-colors mb-2">2</span>
+                        <h2 className="text-4xl font-bold mb-3 text-gray-700 group-hover:text-orange-500 transition-colors text-shadow-sm">第二回合</h2>
+                        <div className="px-6 py-2 bg-red-100 rounded-full border border-red-200">
+                            <span className="text-xl font-light tracking-widest text-red-600">搶答題</span>
                         </div>
                     </div>
                   </button>
                 </div>
                 
-                <footer className="absolute bottom-8 text-white/20 text-sm font-mono">
+                <footer className="absolute bottom-4 text-gray-400 text-xs font-mono tracking-widest">
                   Designed for Full Screen Projection
                 </footer>
               </div>
             );
           }
 
-          // --- 2. ROUND 1 SELECTION MENU ---
           if (viewMode === 'ROUND_1_MENU') {
             return (
-              <div className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-800 flex flex-col items-center justify-center p-8 text-white font-sans">
-                <button onClick={handleMainMenu} className="absolute top-8 left-8 flex items-center space-x-2 text-white/50 hover:text-white transition-colors">
-                    <Home size={24} /> <span>返回主頁</span>
+              <div className="h-full w-full flex flex-col items-center justify-center p-8 text-gray-800 font-sans relative z-10">
+                <ScoreBoard />
+                <button onClick={handleMainMenu} className="absolute top-6 left-6 flex items-center space-x-2 text-gray-500 hover:text-orange-500 transition-colors bg-white px-4 py-2 rounded-full shadow-sm hover:shadow-md">
+                    <Home size={20} /> <span className="text-base">返回主頁</span>
                 </button>
-                <header className="mb-16 text-center animate-fade-in-down">
-                  <h1 className="text-6xl font-extrabold mb-4 tracking-wider text-yellow-300 drop-shadow-lg">第一回合 — 必答題</h1>
-                  <h2 className="text-2xl font-light tracking-widest text-white/70">請選擇題庫組別</h2>
+                <header className="mb-10 text-center animate-fade-in-down">
+                  <h1 className="text-5xl font-extrabold mb-3 tracking-wider text-orange-600 drop-shadow-sm">第一回合 — 必答題</h1>
+                  <h2 className="text-xl font-light tracking-widest text-gray-500">請選擇題庫組別</h2>
                 </header>
-                <div className="grid grid-cols-2 gap-12 w-full max-w-4xl">
+                <div className="grid grid-cols-2 gap-8 w-full max-w-4xl">
                   {['A', 'B', 'C', 'D'].map((set) => (
-                    <button key={set} onClick={() => startRound1Set(set)} className="group relative h-48 bg-white/10 rounded-3xl border-2 border-white/20 hover:bg-white/20 hover:border-yellow-400 hover:scale-105 transition-all duration-300 flex items-center justify-center overflow-hidden shadow-2xl">
-                      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/30 group-hover:opacity-0 transition-opacity" />
-                      <div className="text-8xl font-black text-white/80 group-hover:text-yellow-300 transition-colors drop-shadow-md">{set}</div>
+                    <button key={set} onClick={() => startRound1Set(set)} className="group relative h-40 bright-card bright-card-hover flex items-center justify-center overflow-hidden transition-all duration-300">
+                      <div className="text-7xl font-black text-gray-300 group-hover:text-orange-400 transition-colors text-shadow-sm">{set}</div>
                     </button>
                   ))}
                 </div>
@@ -381,100 +583,113 @@
             );
           }
 
-          // --- 3. SUMMARY SCREEN ---
           if (showSummary) {
             const correctCount = Object.values(results).filter(r => r === 'correct').length;
             const roundTitle = viewMode === 'ROUND_2_GAME' ? '第二回合' : `第一回合 (Set ${currentSet})`;
             
             return (
-              <div className="min-h-screen bg-gradient-to-br from-slate-900 to-indigo-900 flex flex-col items-center justify-center p-8 text-white font-sans">
-                <div className="bg-white/10 backdrop-blur-md p-16 rounded-3xl border border-white/20 text-center shadow-2xl max-w-3xl w-full animate-fade-in-up">
-                  <div className="flex justify-center mb-6"><Trophy size={80} className="text-yellow-400" /></div>
-                  <h2 className="text-5xl font-bold mb-8">{roundTitle} 完成！</h2>
-                  <div className="mb-12">
-                    <p className="text-2xl text-indigo-200 mb-2">總得分</p>
-                    <div className="text-9xl font-black text-yellow-300 drop-shadow-lg">{correctCount} <span className="text-4xl text-white/50">/ {totalQuestions}</span></div>
+              <div className="h-full w-full flex flex-col items-center justify-center p-8 text-gray-800 font-sans relative z-10">
+                <ScoreBoard />
+                <div className="bright-card p-10 rounded-3xl text-center max-w-3xl w-full animate-fade-in-up">
+                  <div className="flex justify-center mb-4"><Trophy size={64} className="text-yellow-500 drop-shadow-md animate-float" /></div>
+                  <h2 className="text-4xl font-bold mb-6 text-gray-800">{roundTitle} 完成！</h2>
+                  <div className="mb-8">
+                    <p className="text-xl text-gray-500 mb-2 font-light">總得分</p>
+                    <div className="text-8xl font-black text-orange-500 drop-shadow-sm">{correctCount} <span className="text-3xl text-gray-300">/ {totalQuestions}</span></div>
                   </div>
-                  <div className="flex justify-center space-x-6">
-                    <button onClick={() => setShowSummary(false)} className="px-8 py-4 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-xl transition-all flex items-center gap-2"><RotateCcw size={24} /><span>檢查答案</span></button>
+
+                  {/* Round 1 Score Assignment UI */}
+                  {viewMode === 'ROUND_1_GAME' && !round1BonusGiven && (
+                      <div className="mb-8 p-6 bg-orange-50 rounded-xl border border-orange-100">
+                          <p className="text-lg text-orange-800 mb-4 font-bold">請選擇將分數 ({correctCount * 10}分) 加至哪一社：</p>
+                          <div className="grid grid-cols-4 gap-4">
+                              {HOUSES.map(house => (
+                                  <button 
+                                    key={house.id}
+                                    onClick={() => awardRound1Points(house.id)}
+                                    className={`${house.color} text-white py-3 rounded-lg font-bold shadow hover:scale-105 transition-transform`}
+                                  >
+                                      {house.name}
+                                  </button>
+                              ))}
+                          </div>
+                      </div>
+                  )}
+
+                  <div className="flex justify-center space-x-4">
+                    <button onClick={() => setShowSummary(false)} className="px-6 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl font-bold text-lg flex items-center gap-2 transition-all shadow-sm hover:shadow-md"><RotateCcw size={20} /><span>檢查答案</span></button>
                     
-                    {/* Add Select Question Set Button for Round 1 only */}
                     {viewMode === 'ROUND_1_GAME' && (
-                        <button onClick={goToRound1Menu} className="px-8 py-4 bg-indigo-500 hover:bg-indigo-400 rounded-xl font-bold text-xl transition-all shadow-lg hover:shadow-indigo-400/50 flex items-center gap-2">
-                            <Grid size={24} /><span>選擇題庫</span>
+                        <button onClick={goToRound1Menu} className="px-6 py-3 gradient-btn text-white rounded-xl font-bold text-lg flex items-center gap-2">
+                            <Grid size={20} /><span>選擇題庫</span>
                         </button>
                     )}
 
-                    <button onClick={handleMainMenu} className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-xl transition-all shadow-lg hover:shadow-indigo-500/50 flex items-center gap-2"><Home size={24} /><span>返回主頁</span></button>
+                    <button onClick={handleMainMenu} className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-200 flex items-center gap-2 transition-all"><Home size={20} /><span>返回主頁</span></button>
                   </div>
                 </div>
               </div>
             );
           }
 
-          // --- 4. GAME SCREEN (ROUND 1 & 2) ---
-          if (!currentQData) return <div>Loading...</div>;
+          if (!currentQData) return <div className="text-gray-500 text-2xl flex items-center justify-center h-full">Loading...</div>;
 
           return (
-            <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-800">
-              {/* Top Bar */}
-              <div className="bg-indigo-900 text-white p-4 shadow-lg flex justify-between items-center z-10">
-                <div className="flex items-center space-x-4">
-                  <button onClick={handleMainMenu} className="p-2 hover:bg-white/10 rounded-full transition-colors flex items-center space-x-2"><Home size={24} /><span className="font-bold text-lg hidden md:inline">主頁</span></button>
-                  <div className="h-8 w-px bg-white/20 mx-2"></div>
-                  <div className="flex flex-col">
-                      <span className="text-xs text-indigo-300 uppercase tracking-widest">Current Round</span>
-                      <span className="text-xl font-bold text-yellow-400">{viewMode === 'ROUND_2_GAME' ? '第二回合 搶答' : `第一回合 Set ${currentSet}`}</span>
+            <div className="h-full w-full flex flex-col font-sans text-gray-800 relative z-10">
+              <ScoreBoard />
+              <div className="bg-white/80 backdrop-blur-md p-3 shadow-sm flex justify-between items-center z-10 sticky top-0 border-b border-gray-100 flex-shrink-0" style={{height: '60px'}}>
+                <div className="flex items-center space-x-3">
+                  <button onClick={handleMainMenu} className="p-1.5 hover:bg-gray-100 rounded-full transition-colors flex items-center space-x-1 text-gray-600"><Home size={20} /><span className="font-bold text-base hidden md:inline">主頁</span></button>
+                  <div className="h-6 w-px bg-gray-200 mx-1"></div>
+                  <div className="flex flex-col justify-center">
+                      <span className="text-[10px] text-gray-400 uppercase tracking-widest leading-none">Current Round</span>
+                      <span className="text-lg font-bold text-orange-500 leading-tight">{viewMode === 'ROUND_2_GAME' ? '第二回合 搶答' : `第一回合 Set ${currentSet}`}</span>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2 bg-indigo-800 px-4 py-2 rounded-lg border border-indigo-700">
-                  <BookOpen size={20} className="text-indigo-300" /><span className="text-xl font-mono font-bold tracking-widest">{questionIndex + 1} <span className="text-indigo-400 text-sm">/ {totalQuestions}</span></span>
+                <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 mr-24"> {/* mr-24 to avoid scoreboard overlap */}
+                  <BookOpen size={18} className="text-gray-400" /><span className="text-lg font-mono font-bold tracking-widest text-gray-700">{questionIndex + 1} <span className="text-gray-400 text-xs">/ {totalQuestions}</span></span>
                 </div>
               </div>
 
-              {/* Main Content */}
-              <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
-                <div className="absolute bottom-0 right-0 w-64 h-64 bg-yellow-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
-
-                <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden relative z-0 flex flex-col min-h-[60vh]">
-                  {/* Question Header */}
-                  <div className="bg-gradient-to-r from-gray-50 to-white p-10 border-b border-gray-100 flex-grow flex flex-col items-center justify-center relative">
-                    <div className="w-full flex justify-center mb-8 flex-wrap gap-2">
-                        <div className="inline-flex items-center space-x-1 bg-white border-2 border-indigo-100 rounded-full p-1 shadow-sm transform hover:scale-105 transition-transform">
-                            <span className="bg-indigo-600 text-white px-6 py-2 rounded-full text-xl font-bold tracking-wide">第 {questionIndex + 1} 題</span>
-                            <span className={`px-6 py-2 rounded-full text-xl font-bold tracking-wide ${currentQData.type === 'mc' ? 'text-blue-600 bg-blue-50' : 'text-purple-600 bg-purple-50'}`}>{currentQData.type === 'mc' ? '選擇題' : '問答題'}</span>
-                            <div className={`flex items-center space-x-2 px-6 py-2 rounded-full text-xl font-bold tracking-wide border ${categoryColorClass}`}><Tag size={20} /><span>{currentQData.category}</span></div>
+              <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+                <div className="w-full h-full max-w-5xl bright-card overflow-hidden relative z-0 flex flex-col animate-fade-in-up">
+                  <div className="bg-gradient-to-r from-gray-50 to-white p-4 md:p-6 border-b border-gray-100 flex-grow flex flex-col items-center justify-center relative">
+                    <div className="w-full flex justify-center mb-4 flex-wrap gap-2">
+                        <div className="inline-flex items-center space-x-1 bg-white border border-gray-200 rounded-full p-1 shadow-sm transform hover:scale-105 transition-transform">
+                            <span className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white px-4 py-1.5 rounded-full text-lg font-bold tracking-wide shadow-md">第 {questionIndex + 1} 題</span>
+                            <span className={`px-4 py-1.5 rounded-full text-lg font-bold tracking-wide border-y border-r border-gray-100 ${currentQData.type === 'mc' ? 'text-blue-600 bg-blue-50' : 'text-purple-600 bg-purple-50'}`}>{currentQData.type === 'mc' ? '選擇題' : '問答題'}</span>
+                            <div className={`flex items-center space-x-1 px-4 py-1.5 rounded-full text-lg font-bold tracking-wide border ${categoryColorClass}`}><Tag size={16} /><span>{currentQData.category}</span></div>
                         </div>
                     </div>
-                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-center leading-tight text-indigo-950 drop-shadow-sm z-10">{currentQData.question}</h2>
+                    <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center leading-tight text-gray-800 drop-shadow-sm z-10 py-2 px-4">{currentQData.question}</h2>
                     {currentResult && currentQData.type === 'text' && (
-                      <div className={`absolute bottom-4 right-8 transform -rotate-12 border-4 text-4xl font-black px-6 py-2 rounded-lg opacity-50 ${currentResult === 'correct' ? 'border-green-500 text-green-600' : 'border-red-500 text-red-600'}`}>{currentResult === 'correct' ? 'CORRECT' : 'INCORRECT'}</div>
+                      <div className={`absolute bottom-2 right-6 transform -rotate-12 border-4 text-3xl font-black px-4 py-1 rounded-lg shadow-xl animate-fade-in-down ${currentResult === 'correct' ? 'border-green-500 text-green-600 bg-green-50' : 'border-red-500 text-red-600 bg-red-50'}`}>{currentResult === 'correct' ? 'CORRECT' : 'INCORRECT'}</div>
                     )}
                   </div>
 
-                  {/* Options Area */}
-                  <div className="p-8 bg-white">
+                  <div className="p-4 md:p-6 bg-white overflow-y-auto" style={{maxHeight: '50vh'}}>
                     {currentQData.type === 'mc' && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {currentQData.options.map((option) => {
                           const letter = option.charAt(0);
                           const isSelected = selectedOption === letter;
                           const isCorrect = letter === currentQData.correctOption;
-                          let btnClass = "relative overflow-hidden group p-6 rounded-2xl border-4 text-left transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-md flex items-center";
+                          
+                          let btnClass = "relative overflow-hidden group p-4 rounded-xl border-2 text-left transition-all duration-300 hover:scale-[1.01] active:scale-95 shadow-sm flex items-center";
+                          
                           if (!isRevealed) {
-                            btnClass += " bg-white border-gray-200 hover:border-indigo-400 hover:bg-indigo-50";
+                            btnClass += " bg-white border-gray-100 hover:border-orange-300 hover:bg-orange-50 hover:shadow-md";
                           } else {
-                            if (isCorrect) btnClass += " bg-green-100 border-green-500 text-green-900 shadow-green-200";
-                            else if (isSelected && !isCorrect) btnClass += " bg-red-100 border-red-500 text-red-900 opacity-80";
-                            else btnClass += " bg-gray-50 border-gray-100 text-gray-400 opacity-50 scale-95";
+                            if (isCorrect) btnClass += " bg-green-50 border-green-500 text-green-800 shadow-md ring-2 ring-green-100";
+                            else if (isSelected && !isCorrect) btnClass += " bg-red-50 border-red-500 text-red-800 opacity-80";
+                            else btnClass += " bg-gray-50 border-gray-100 text-gray-400 opacity-60 scale-95";
                           }
                           return (
                             <button key={option} disabled={isRevealed} onClick={() => handleOptionClick(option)} className={btnClass}>
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl font-black mr-6 shrink-0 ${!isRevealed ? 'bg-indigo-100 text-indigo-700 group-hover:bg-indigo-600 group-hover:text-white transition-colors' : isCorrect ? 'bg-green-500 text-white' : isSelected ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-500'}`}>{letter}</div>
-                              <span className="text-3xl font-medium">{option.substring(2)}</span>
-                              {isRevealed && isCorrect && <span className="absolute right-4 text-green-600 animate-bounce"><CheckCircle size={32}/></span>}
-                              {isRevealed && isSelected && !isCorrect && <span className="absolute right-4 text-red-600"><XCircle size={32}/></span>}
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl font-black mr-4 shrink-0 shadow-sm ${!isRevealed ? 'bg-gray-100 text-gray-500 group-hover:bg-orange-500 group-hover:text-white transition-colors' : isCorrect ? 'bg-green-500 text-white' : isSelected ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-400'}`}>{letter}</div>
+                              <span className="text-xl md:text-2xl font-medium">{option.substring(2)}</span>
+                              {isRevealed && isCorrect && <span className="absolute right-4 text-green-500 animate-bounce"><CheckCircle size={32}/></span>}
+                              {isRevealed && isSelected && !isCorrect && <span className="absolute right-4 text-red-500"><XCircle size={32}/></span>}
                             </button>
                           );
                         })}
@@ -482,20 +697,20 @@
                     )}
 
                     {currentQData.type === 'text' && (
-                      <div className="flex flex-col items-center justify-center py-6">
+                      <div className="flex flex-col items-center justify-center py-2">
                         {!isRevealed ? (
-                          <button onClick={handleShowAnswer} className="group flex items-center space-x-3 px-12 py-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300"><HelpCircle size={32} /><span className="text-3xl font-bold">顯示答案</span></button>
+                          <button onClick={handleShowAnswer} className="group flex items-center space-x-3 px-12 py-6 gradient-btn rounded-full shadow-2xl hover:scale-105 transition-all duration-300 text-white"><HelpCircle size={32} /><span className="text-3xl font-bold">顯示答案</span></button>
                         ) : (
                           <div className="w-full flex flex-col items-center animate-fade-in-up">
-                            <div className="w-full text-center mb-8">
-                              <div className="inline-block px-12 py-8 bg-green-50 rounded-2xl border-4 border-green-200 shadow-inner">
+                            <div className="w-full text-center mb-6">
+                              <div className="inline-block px-10 py-6 bg-green-50 rounded-2xl border-2 border-green-200 shadow-inner">
                                 <span className="block text-green-600 text-lg font-bold uppercase tracking-wider mb-2">Correct Answer</span>
                                 <h3 className="text-4xl md:text-5xl font-black text-green-800 leading-tight">{currentQData.answer}</h3>
                               </div>
                             </div>
                             <div className="flex space-x-6">
-                              <button onClick={() => handleTextJudge(true)} className={`flex items-center space-x-2 px-8 py-4 rounded-xl font-bold text-xl transition-all ${currentResult === 'correct' ? 'bg-green-600 text-white shadow-lg scale-105 ring-4 ring-green-200' : 'bg-gray-100 text-gray-400 hover:bg-green-100 hover:text-green-600'}`}><CheckCircle size={28} /><span>答對 (+1)</span></button>
-                              <button onClick={() => handleTextJudge(false)} className={`flex items-center space-x-2 px-8 py-4 rounded-xl font-bold text-xl transition-all ${currentResult === 'incorrect' ? 'bg-red-600 text-white shadow-lg scale-105 ring-4 ring-red-200' : 'bg-gray-100 text-gray-400 hover:bg-red-100 hover:text-red-600'}`}><XCircle size={28} /><span>答錯</span></button>
+                              <button onClick={() => handleTextJudge(true)} className={`flex items-center space-x-2 px-8 py-4 rounded-xl font-bold text-xl transition-all shadow-lg ${currentResult === 'correct' ? 'bg-green-500 text-white scale-105 ring-4 ring-green-200' : 'bg-white text-gray-400 hover:bg-green-50 hover:text-green-600 border-2 border-gray-200'}`}><CheckCircle size={24} /><span>答對 (+1)</span></button>
+                              <button onClick={() => handleTextJudge(false)} className={`flex items-center space-x-2 px-8 py-4 rounded-xl font-bold text-xl transition-all shadow-lg ${currentResult === 'incorrect' ? 'bg-red-500 text-white scale-105 ring-4 ring-red-200' : 'bg-white text-gray-400 hover:bg-red-50 hover:text-red-600 border-2 border-gray-200'}`}><XCircle size={24} /><span>答錯</span></button>
                             </div>
                           </div>
                         )}
@@ -503,41 +718,58 @@
                     )}
 
                     {isRevealed && currentQData.supplement && (
-                      <div className="mt-8 animate-fade-in-up delay-300">
-                        <div className="bg-yellow-50 border-l-8 border-yellow-400 p-6 rounded-r-xl shadow-sm">
-                          <div className="flex items-start space-x-4">
-                            <div className="bg-yellow-200 p-2 rounded-full mt-1"><RefreshCw size={24} className="text-yellow-700" /></div>
-                            <div><h4 className="text-yellow-800 font-bold text-xl mb-1">補充 / 解釋</h4><p className="text-2xl text-yellow-900 leading-relaxed">{currentQData.supplement}</p></div>
+                      <div className="mt-6 animate-fade-in-up delay-300">
+                        <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-xl shadow-sm border border-orange-100">
+                          <div className="flex items-start space-x-3">
+                            <div className="bg-orange-200 p-2 rounded-full mt-0.5"><RefreshCw size={20} className="text-orange-800" /></div>
+                            <div><h4 className="text-orange-800 font-bold text-xl mb-1">補充 / 解釋</h4><p className="text-xl md:text-2xl text-orange-900 leading-relaxed font-medium">{currentQData.supplement}</p></div>
                           </div>
                         </div>
                       </div>
                     )}
+
+                    {/* --- Round 2: 即時搶答計分控制台 --- */}
+                    {viewMode === 'ROUND_2_GAME' && (
+                        <div className="mt-6 pt-4 border-t border-gray-100 animate-fade-in-up">
+                            <p className="text-center text-gray-400 text-sm mb-2 font-bold tracking-widest uppercase">BUZZER ROUND SCORING</p>
+                            <div className="grid grid-cols-4 gap-2">
+                                {HOUSES.map(house => (
+                                    <div key={house.id} className={`${house.bgLight} border ${house.border} rounded-lg p-2 flex flex-col items-center shadow-sm`}>
+                                        <span className={`text-sm font-bold ${house.text} mb-1`}>{house.name}</span>
+                                        <div className="flex gap-1 w-full justify-center">
+                                            <button onClick={() => adjustScore(house.id, 20)} className="bg-green-500 hover:bg-green-600 text-white p-1.5 rounded shadow active:scale-95 flex-1 flex justify-center"><Plus size={16} /></button>
+                                            <button onClick={() => adjustScore(house.id, -10)} className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded shadow active:scale-95 flex-1 flex justify-center"><Minus size={16} /></button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                   </div>
 
-                  {/* Footer */}
-                  <div className="bg-gray-50 border-t border-gray-200 p-4 flex justify-between items-center">
-                    <button onClick={handlePrev} disabled={questionIndex === 0} className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-bold text-lg transition-colors ${questionIndex === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-200 hover:text-indigo-600'}`}><ChevronLeft size={24} /><span>上一題</span></button>
+                  <div className="bg-gray-50 border-t border-gray-200 p-4 flex justify-between items-center flex-shrink-0" style={{height: '80px'}}>
+                    <button onClick={handlePrev} disabled={questionIndex === 0} className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-bold text-lg transition-colors ${questionIndex === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-200 hover:text-orange-600'}`}><ChevronLeft size={24} /><span>上一題</span></button>
                     
-                    {/* Progress Bar - Only show dots if less than 20 questions, otherwise just numbers */}
                     {totalQuestions <= 20 ? (
                         <div className="hidden md:flex space-x-2">
                           {activeQuestions.map((_, idx) => {
                             const res = results[idx];
                             let bgClass = 'bg-gray-300';
-                            if (idx === questionIndex) bgClass = 'bg-indigo-600 scale-125';
+                            if (idx === questionIndex) bgClass = 'bg-orange-500 scale-125 shadow-lg';
                             else if (res === 'correct') bgClass = 'bg-green-500';
                             else if (res === 'incorrect') bgClass = 'bg-red-500';
-                            else if (idx < questionIndex) bgClass = 'bg-indigo-300';
+                            else if (idx < questionIndex) bgClass = 'bg-orange-200';
                             return <div key={idx} className={`w-3 h-3 rounded-full transition-all ${bgClass}`} />
                           })}
                         </div>
                     ) : (
-                        <div className="text-gray-400 font-mono">
+                        <div className="text-gray-400 font-mono text-base font-bold">
                             Progress: {((questionIndex + 1) / totalQuestions * 100).toFixed(0)}%
                         </div>
                     )}
 
-                    <button onClick={handleNext} className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-bold text-lg transition-colors ${isLastQuestion ? 'bg-yellow-500 text-white hover:bg-yellow-600 shadow-md' : 'text-indigo-600 hover:bg-indigo-50'}`}><span>{isLastQuestion ? '完成 (Finish)' : '下一題'}</span><ChevronRight size={24} /></button>
+                    <button onClick={handleNext} className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg transform active:scale-95 ${isLastQuestion ? 'bg-yellow-500 text-white hover:bg-yellow-600' : 'text-orange-600 hover:bg-orange-50 border-2 border-transparent hover:border-orange-100'}`}><span>{isLastQuestion ? '完成 (Finish)' : '下一題'}</span><ChevronRight size={24} /></button>
                   </div>
                 </div>
               </div>
